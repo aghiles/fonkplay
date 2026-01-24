@@ -2630,6 +2630,16 @@ ${mixerFunctionsToString()}
                 if (amp > ch.peakAmp) ch.peakAmp = amp;
                 else ch.peakAmp *= 0.99985; // Slow decay (~60ms to half)
                 
+                // Capture waveform for oscilloscope display
+                if (!ch.waveform) ch.waveform = new Float32Array(32);
+                if (!ch.waveformIdx) ch.waveformIdx = 0;
+                if (!ch.waveformCounter) ch.waveformCounter = 0;
+                if (++ch.waveformCounter >= 40) {
+                    ch.waveformCounter = 0;
+                    ch.waveform[ch.waveformIdx] = smp * ch.currentVol;
+                    ch.waveformIdx = (ch.waveformIdx + 1) & 31;
+                }
+                
                 // Modern mode: sample-rate vibrato with integrated sine
                 let inc = ch.increment;
                 if (this.interpolation === 'sinc' && ch.vibratoActive && ch.vibratoDepth > 0) {
@@ -2746,7 +2756,9 @@ ${mixerFunctionsToString()}
                     period: ch?.period || 0,
                     portaTarget: ch?.portaTarget || 0,
                     playing: ch?.playing || false,
-                    peakAmp: ch?.peakAmp || 0
+                    peakAmp: ch?.peakAmp || 0,
+                    waveform: ch?.waveform ? Array.from(ch.waveform) : null,
+                    waveformIdx: ch?.waveformIdx || 0
                 });
                 if (ch) ch.volumeKick = false;
             }
@@ -2832,6 +2844,11 @@ registerProcessor('s3m-mixer', S3MMixerProcessor);
                             dst.portaTarget = src.portaTarget;
                             dst.playing = src.playing;
                             dst.peakAmp = src.peakAmp;
+                            if (src.waveform) {
+                                if (!dst.waveform) dst.waveform = new Float32Array(32);
+                                for (let w = 0; w < 32; w++) dst.waveform[w] = src.waveform[w];
+                                dst.waveformIdx = src.waveformIdx;
+                            }
                         }
                     }
                 }
