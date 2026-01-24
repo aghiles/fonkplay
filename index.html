@@ -2771,8 +2771,16 @@ ${mixerFunctionsToString()}
 registerProcessor('s3m-mixer', S3MMixerProcessor);
 `;
         
-        const blob = new Blob([workletCode], { type: 'application/javascript' });
-        const url = URL.createObjectURL(blob);
+        // Try data URL first (works with file://), fallback to blob URL
+        let url;
+        let useDataUrl = false;
+        try {
+            url = 'data:application/javascript;base64,' + btoa(unescape(encodeURIComponent(workletCode)));
+            useDataUrl = true;
+        } catch (e) {
+            const blob = new Blob([workletCode], { type: 'application/javascript' });
+            url = URL.createObjectURL(blob);
+        }
         
         let useWorklet = false;
         try {
@@ -2781,7 +2789,7 @@ registerProcessor('s3m-mixer', S3MMixerProcessor);
         } catch (err) {
             console.warn('AudioWorklet not available (CSP or other), falling back to ScriptProcessorNode:', err.message);
         }
-        URL.revokeObjectURL(url);
+        if (!useDataUrl) URL.revokeObjectURL(url);
         
         if (useWorklet) {
             this.workletNode = new AudioWorkletNode(this.audioCtx, 's3m-mixer', {
@@ -2830,6 +2838,7 @@ registerProcessor('s3m-mixer', S3MMixerProcessor);
             };
             
             this.useWorklet = true;
+            console.log('🎵 Audio: Using AudioWorklet' + (useDataUrl ? ' (data URL)' : ' (blob URL)'));
         } else {
             // Fallback to ScriptProcessorNode
             this.scriptNode = this.audioCtx.createScriptProcessor(4096, 0, 2);
@@ -2839,6 +2848,7 @@ registerProcessor('s3m-mixer', S3MMixerProcessor);
             this.scriptNode.connect(this.masterGain);
             this.masterGain.connect(this.audioCtx.destination);
             this.useWorklet = false;
+            console.log('🎵 Audio: Using ScriptProcessorNode (fallback)');
         }
     }
     
