@@ -868,7 +868,8 @@
                     </div>
                     <div class="exportNote">
                         Surround placement is configured in the SAMPLES tab.<br>
-                        Samples have been auto-analyzed based on audio and pattern usage.
+                        Samples have been auto-analyzed based on audio and pattern usage.<br>
+                        Adjust the Front↔Rear sliders to customize placement.
                     </div>
                 </div>
             </div>
@@ -4145,7 +4146,7 @@ document.getElementById('fileInput').onchange = async (e) => {
     const file = e.target.files[0]; if (!file) return;
     document.getElementById('info').textContent = 'Loading: ' + file.name;
     try {
-        player.initAudio();
+        await player.initAudio();
         await player.loadModule(await file.arrayBuffer());
         player.originalFilename = file.name;
         player.analyzeSamples(); // Analyze for surround placement
@@ -4186,10 +4187,19 @@ async function loadPresetsList() {
 async function loadDemo(filename) {
     document.getElementById('info').textContent = 'Loading: ' + filename;
     try {
-        const response = await fetch('demos/' + filename);
+        // Try local first, fallback to GitHub raw for file:// protocol
+        let response;
+        try {
+            response = await fetch('demos/' + filename);
+        } catch (e) {
+            response = { ok: false };
+        }
+        if (!response.ok) {
+            response = await fetch('https://raw.githubusercontent.com/aghiles/fonkplay/main/demos/' + filename);
+        }
         if (!response.ok) throw new Error('File not found');
         const buffer = await response.arrayBuffer();
-        player.initAudio();
+        await player.initAudio();
         await player.loadModule(buffer);
         player.originalFilename = filename;
         player.analyzeSamples();
@@ -4464,7 +4474,7 @@ document.body.addEventListener('drop', async (e) => {
     const name = file?.name.toLowerCase();
     if (name?.endsWith('.s3m') || name?.endsWith('.mod')) {
         try {
-            player.initAudio();
+            await player.initAudio();
             await player.loadModule(await file.arrayBuffer());
             player.originalFilename = file.name;
             player.analyzeSamples(); // Analyze for surround placement
