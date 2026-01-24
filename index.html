@@ -853,14 +853,22 @@
                     </select>
                 </div>
                 <div class="exportOption">
+                    <label>⏱️ Range</label>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                        <input type="text" id="exportStart" value="0:00" style="width: 60px; padding: 5px; font-family: 'DOS', monospace; background: #0a0a1a; color: #55FFFF; border: 1px solid #333366; border-radius: 3px; text-align: center;">
+                        <span style="color: #888;">to</span>
+                        <input type="text" id="exportEnd" value="0:00" style="width: 60px; padding: 5px; font-family: 'DOS', monospace; background: #0a0a1a; color: #55FFFF; border: 1px solid #333366; border-radius: 3px; text-align: center;">
+                        <button id="exportFullBtn" style="padding: 5px 10px; font-size: 11px;">Full Song</button>
+                    </div>
+                </div>
+                <div class="exportOption">
                     <div class="exportCheckbox">
                         <input type="checkbox" id="exportDolby">
                         <span>🔊 Dolby Surround Encoding</span>
                     </div>
                     <div class="exportNote">
-                        Surround placement is configured in the SAMPLES/SURROUND tab.<br>
-                        Samples have been auto-analyzed based on audio and pattern usage.<br>
-                        Adjust the Front↔Rear sliders to customize placement.
+                        Surround placement is configured in the SAMPLES tab.<br>
+                        Samples have been auto-analyzed based on audio and pattern usage.
                     </div>
                 </div>
             </div>
@@ -2092,7 +2100,7 @@ class S3MPlayer {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     }
     
-    async exportWAV(onProgress, dolbyEnabled = false) {
+    async exportWAV(onProgress, dolbyEnabled = false, startTime = 0, endTime = null) {
         if (!this.module || !this.patterns.length) return null;
         
         const sampleRate = 44100;
@@ -2100,8 +2108,13 @@ class S3MPlayer {
         const bitsPerSample = 16;
         const chunkSize = 44100; // Process 1 second at a time, then yield to UI
         
+        // Use total duration if no end time specified
+        if (endTime === null) endTime = this.totalDuration;
+        const exportDuration = endTime - startTime;
+        if (exportDuration <= 0) return null;
+        
         // Calculate total samples needed
-        const totalSamples = Math.ceil(this.totalDuration * sampleRate) + sampleRate; // +1 sec buffer
+        const totalSamples = Math.ceil(exportDuration * sampleRate) + sampleRate; // +1 sec buffer
         
         // Create output buffers - for Dolby we mix to 4 channels first, then encode
         const leftChannel = new Float32Array(totalSamples);
@@ -2122,40 +2135,47 @@ class S3MPlayer {
         const savedPlaying = this.playing;
         const savedInterpolation = this.interpolation;
         
-        // Reset to start
-        this.currentOrder = 0;
-        this.currentRow = 0;
-        this.tick = 0;
-        this.speed = this.module.initialSpeed || 6;
-        this.tempo = this.module.initialTempo || 125;
-        this.globalVolume = this.module.globalVolume || 64;
-        // Keep current interpolation setting (don't override)
-        this.exporting = true; // Flag for full volume
-        
-        // Skip marker orders
-        while (this.currentOrder < this.orders.length && this.orders[this.currentOrder] >= 254)
-            this.currentOrder++;
-        this.currentPattern = this.orders[this.currentOrder] || 0;
-        
-        // Reset channels
-        for (const ch of this.channels) {
-            ch.playing = false;
-            ch.position = 0;
-            ch.increment = 0;
-            ch.currentVol = 0;
-            ch.targetVol = 0;
-            ch.volume = 64;
-            ch.sample = null;
-            ch.sampleData = null;
-            ch.period = 0;
-            ch.pendingTrigger = false;
-            ch.pendingStop = false;
+        // Reset to start or seek to startTime
+        if (startTime > 0) {
+            // Seek to start position
+            const pos = this.getPositionAtTime(startTime);
+            this.simulateToPosition(pos.order, pos.row);
+        } else {
+            this.currentOrder = 0;
+            this.currentRow = 0;
+            this.tick = 0;
+            this.speed = this.module.initialSpeed || 6;
+            this.tempo = this.module.initialTempo || 125;
+            this.globalVolume = this.module.globalVolume || 64;
+            
+            // Skip marker orders
+            while (this.currentOrder < this.orders.length && this.orders[this.currentOrder] >= 254)
+                this.currentOrder++;
+            this.currentPattern = this.orders[this.currentOrder] || 0;
+            
+            // Reset channels
+            for (const ch of this.channels) {
+                ch.playing = false;
+                ch.position = 0;
+                ch.increment = 0;
+                ch.currentVol = 0;
+                ch.targetVol = 0;
+                ch.volume = 64;
+                ch.sample = null;
+                ch.sampleData = null;
+                ch.period = 0;
+                ch.pendingTrigger = false;
+                ch.pendingStop = false;
+            }
+            
+            this.patternLoopRow = 0;
+            this.patternLoopCount = 0;
+            this.jumpToOrder = -1;
+            this.breakToRow = -1;
         }
         
-        this.patternLoopRow = 0;
-        this.patternLoopCount = 0;
-        this.jumpToOrder = -1;
-        this.breakToRow = -1;
+        // Keep current interpolation setting (don't override)
+        this.exporting = true; // Flag for full volume
         this.samplesPerTick = Math.floor(sampleRate * 2.5 / this.tempo);
         this.tickSampleCounter = 0;
         
@@ -3837,7 +3857,7 @@ registerProcessor('s3m-mixer', S3MMixerProcessor);
         if (!this.module) return;
         this.stopSamplePreview(); // Stop any sample preview
         await this.initAudio();
-        if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+        if (this.audioCtx.state === 'suspended') await this.audioCtx.resume();
         
         if (this.useWorklet) {
             // Send all data to worklet
@@ -4138,7 +4158,7 @@ document.getElementById('fileInput').onchange = async (e) => {
         document.getElementById('timePos').textContent = '0:00';
         document.getElementById('timeDur').textContent = player.formatTime(player.totalDuration);
         // Autoplay
-        player.play();
+        await player.play();
         document.getElementById('playPauseBtn').textContent = '⏸';
     } catch (err) { document.getElementById('info').textContent = 'Error: ' + err.message; }
 };
@@ -4181,7 +4201,7 @@ async function loadDemo(filename) {
         document.getElementById('timePos').textContent = '0:00';
         document.getElementById('timeDur').textContent = player.formatTime(player.totalDuration);
         // Autoplay
-        player.play();
+        await player.play();
         document.getElementById('playPauseBtn').textContent = '⏸';
     } catch (err) { 
         document.getElementById('info').textContent = 'Error loading: ' + err.message; 
@@ -4228,6 +4248,9 @@ document.getElementById('exportBtn').onclick = () => {
     document.getElementById('exportFilter').value = player.interpolation;
     // Sync surround checkbox with current playback state (Pro Logic only for export)
     document.getElementById('exportDolby').checked = player.surroundMode === 'prologic';
+    // Initialize range to full song
+    document.getElementById('exportStart').value = '0:00';
+    document.getElementById('exportEnd').value = player.formatTime(player.totalDuration);
     // Show modal
     document.getElementById('exportModal').classList.add('show');
     document.getElementById('exportOptions').classList.remove('hide');
@@ -4235,6 +4258,23 @@ document.getElementById('exportBtn').onclick = () => {
     document.getElementById('confirmExportBtn').disabled = false;
     document.getElementById('cancelExportBtn').disabled = false;
 };
+
+// Full Song button
+document.getElementById('exportFullBtn').onclick = () => {
+    document.getElementById('exportStart').value = '0:00';
+    document.getElementById('exportEnd').value = player.formatTime(player.totalDuration);
+};
+
+// Parse time string "M:SS" to seconds
+function parseTimeString(str) {
+    const parts = str.split(':');
+    if (parts.length === 2) {
+        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    } else if (parts.length === 1) {
+        return parseInt(parts[0]);
+    }
+    return 0;
+}
 
 // Cancel export
 document.getElementById('cancelExportBtn').onclick = () => {
@@ -4258,6 +4298,8 @@ document.getElementById('confirmExportBtn').onclick = async () => {
     // Get export options
     const filterValue = document.getElementById('exportFilter').value;
     const dolbyEnabled = document.getElementById('exportDolby').checked;
+    const startTime = parseTimeString(document.getElementById('exportStart').value);
+    const endTime = parseTimeString(document.getElementById('exportEnd').value);
     
     // Hide options, show progress
     optionsDiv.classList.add('hide');
@@ -4290,7 +4332,7 @@ document.getElementById('confirmExportBtn').onclick = async () => {
     try {
         const result = await player.exportWAV((progress) => {
             progressText.textContent = 'Exporting... ' + progress + '%';
-        }, dolbyEnabled);
+        }, dolbyEnabled, startTime, endTime);
         
         if (result && result.buffer) {
             const blob = new Blob([result.buffer], { type: 'audio/wav' });
@@ -4298,7 +4340,10 @@ document.getElementById('confirmExportBtn').onclick = async () => {
             const a = document.createElement('a');
             a.href = url;
             const suffix = dolbyEnabled ? '_surround' : '';
-            const filename = (player.originalFilename || 'export').replace(/\.[^.]+$/, '') + suffix + '.wav';
+            const rangeStr = (startTime > 0 || endTime < player.totalDuration) ? 
+                '_' + document.getElementById('exportStart').value.replace(':', '-') + 
+                '_' + document.getElementById('exportEnd').value.replace(':', '-') : '';
+            const filename = (player.originalFilename || 'export').replace(/\.[^.]+$/, '') + rangeStr + suffix + '.wav';
             a.download = filename;
             document.body.appendChild(a);
             a.click();
@@ -4432,7 +4477,7 @@ document.body.addEventListener('drop', async (e) => {
             document.getElementById('timePos').textContent = '0:00';
             document.getElementById('timeDur').textContent = player.formatTime(player.totalDuration);
             // Autoplay
-            player.play();
+            await player.play();
             document.getElementById('playPauseBtn').textContent = '⏸';
         } catch (err) { document.getElementById('info').textContent = 'Error: ' + err.message; }
     }
