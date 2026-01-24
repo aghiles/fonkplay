@@ -2393,6 +2393,8 @@ class S3MPlayer {
         // Complete AudioWorklet processor with sequencer, effects, and mixing
         const workletCode = `
 class S3MMixerProcessor extends AudioWorkletProcessor {
+    static get parameterDescriptors() { return []; }
+    
     constructor() {
         super();
         
@@ -2571,6 +2573,7 @@ ${mixerFunctionsToString()}
 
     process(inputs, outputs, parameters) {
         const output = outputs[0];
+        if (!output || !output[0] || !output[1]) return true;
         const outL = output[0];
         const outR = output[1];
         const len = outL.length;
@@ -2773,7 +2776,9 @@ registerProcessor('s3m-mixer', S3MMixerProcessor);
         URL.revokeObjectURL(url);
         
         if (useWorklet) {
-            this.workletNode = new AudioWorkletNode(this.audioCtx, 's3m-mixer');
+            this.workletNode = new AudioWorkletNode(this.audioCtx, 's3m-mixer', {
+                outputChannelCount: [2]
+            });
             this.masterGain = this.audioCtx.createGain();
             this.masterGain.gain.value = this.masterVolume;
             
