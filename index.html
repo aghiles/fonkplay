@@ -140,6 +140,15 @@
         #samplesPanel::-webkit-scrollbar { width: 8px; }
         #samplesPanel::-webkit-scrollbar-track { background: #0a0a1a; }
         #samplesPanel::-webkit-scrollbar-thumb { background: #3a3a5e; border-radius: 4px; }
+        /* ASM Story Panel */
+        #asmPanel {
+            max-height: 350px; overflow-y: auto;
+        }
+        #asmPanel::-webkit-scrollbar { width: 8px; }
+        #asmPanel::-webkit-scrollbar-track { background: #0a0a1a; }
+        #asmPanel::-webkit-scrollbar-thumb { background: #3a3a5e; border-radius: 4px; }
+        #asmPanel a { text-decoration: none; }
+        #asmPanel a:hover { text-decoration: underline; }
         .sampleRow {
             display: grid; grid-template-columns: 30px 40px 160px 80px 120px 80px;
             gap: 10px; padding: 6px 10px; align-items: center;
@@ -277,6 +286,7 @@
             margin: 5px 0;
             line-height: 1.5;
             font-size: 12px;
+            color: #AAAAAA;
         }
         .aboutSection b { color: #FFFF55; }
         .techBlock {
@@ -411,7 +421,7 @@
                     <select id="surroundMode">
                         <option value="stereo">Stereo</option>
                         <option value="prologic">Pro Logic Surround</option>
-                        <option value="headphone">Headphone HRTF</option>
+                        <option value="headphone">Headphones / Laptop</option>
                     </select>
                 </label>
             </div>
@@ -424,7 +434,8 @@
         </div>
         <div id="tabBar">
             <div class="tab active" data-tab="player">ℹ️ ABOUT</div>
-            <div class="tab" data-tab="samples">🎚️ SAMPLES / SURROUND</div>
+            <div class="tab" data-tab="asm">📜 HISTORY</div>
+            <div class="tab" data-tab="samples">🎚️ SAMPLES</div>
         </div>
         <div id="tabContent">
             <div id="playerPanel" class="tabPanel active">
@@ -783,6 +794,46 @@
                 </div>
                 <div id="samplesList">
                     <div class="noSamples">No module loaded</div>
+                </div>
+            </div>
+            <div id="asmPanel" class="tabPanel">
+                <div class="aboutSection">
+                    <h2>🎵 The Tracker Era</h2>
+                    <p>In the late 80s and early 90s, before MP3s existed, the demoscene created a revolution in computer music. Groups like Future Crew, Triton, and KFMF composed incredible soundtracks using <i>tracker software</i> — sequencers that played back short audio samples at different pitches.</p>
+                    <p>The format started on the Amiga with 4-channel MOD files, then evolved to Scream Tracker's S3M format on PC with up to 32 channels, stereo panning, and new effects.</p>
+                </div>
+                
+                <div class="aboutSection">
+                    <h2>🔊 Sound Blaster vs Gravis Ultrasound</h2>
+                    <p>Two sound cards defined the era:</p>
+                    <p>The <b>Sound Blaster</b> was everywhere — affordable and compatible. But it had no hardware mixing. Your CPU had to combine all channels into a single audio stream in real-time. On a 33MHz 486, that meant hand-optimized assembly code. Select "Sound Blaster" interpolation mode to hear that raw, crunchy sound.</p>
+                    <p>The <b>Gravis Ultrasound</b> was the holy grail. It had 1MB of onboard RAM and could mix 32 channels in hardware. You'd upload your samples to the card and it did the rest — with smooth linear interpolation. Select "Gravis Ultrasound" mode to hear the difference.</p>
+                </div>
+                
+                <div class="aboutSection">
+                    <h2>💾 The Original Code</h2>
+                    <p>This player is a JavaScript port of FonkPlay by Psyke/DCB and VIP/DCB — written in x86 assembly around 1994-1996. The <a href="https://github.com/aghiles/fonkplay" target="_blank" style="color: #55FFFF;">original source code</a> is available on GitHub.</p>
+                    <p>Key files include the <a href="https://github.com/aghiles/fonkplay/blob/main/SERVER.ASM" target="_blank" style="color: #FFFF55;">mixing engine</a>, the <a href="https://github.com/aghiles/fonkplay/blob/main/EFX.ASM" target="_blank" style="color: #FFFF55;">effect processor</a>, and the <a href="https://github.com/aghiles/fonkplay/blob/main/GUS.INC" target="_blank" style="color: #FFFF55;">GUS hardware interface</a>.</p>
+                </div>
+                
+                <div class="aboutSection">
+                    <h2>🎛️ Effects</h2>
+                    <p>Trackers weren't just samplers — they had powerful real-time effects. All implemented in raw assembly:</p>
+                    <div style="font-family: 'DOS', monospace; font-size: 11px; margin: 15px 0; line-height: 1.8; color: #AAAAAA;">
+                        <a href="https://github.com/aghiles/fonkplay/blob/main/EFX.ASM#L1" target="_blank" style="color: #55FF55;">Gxx</a> — Portamento (slide to note)<br>
+                        <a href="https://github.com/aghiles/fonkplay/blob/main/EFX.ASM#L1" target="_blank" style="color: #55FF55;">Hxx</a> — Vibrato (pitch wobble)<br>
+                        <a href="https://github.com/aghiles/fonkplay/blob/main/EFX.ASM#L1" target="_blank" style="color: #55FF55;">Jxx</a> — Arpeggio (fake chords)<br>
+                        <a href="https://github.com/aghiles/fonkplay/blob/main/EFX.ASM#L1" target="_blank" style="color: #55FF55;">Ixx</a> — Tremor (volume gating)<br>
+                        <a href="https://github.com/aghiles/fonkplay/blob/main/EFX.ASM#L1" target="_blank" style="color: #55FF55;">Qxx</a> — Retrigger (drum rolls)<br>
+                        <a href="https://github.com/aghiles/fonkplay/blob/main/EFX.ASM#L1" target="_blank" style="color: #55FF55;">Dxx</a> — Volume slide<br>
+                    </div>
+                    <p style="color: #888; font-size: 11px;">Click any effect to see the original x86 assembly. Yes, people wrote this by hand. 🤯</p>
+                </div>
+                
+                <div class="aboutSection">
+                    <h2>🌍 The Demoscene</h2>
+                    <p>The demoscene wasn't just about music — it was a competitive underground culture of programmers, artists, and musicians pushing hardware to its limits. They'd gather at demoparties across Europe to show off their creations.</p>
+                    <p>Names like Purple Motion, Skaven, Basehead, and Lizardking became legends. Their music — often composed on 4MB RAM machines — still sounds incredible today.</p>
                 </div>
             </div>
         </div>
@@ -1422,6 +1473,7 @@ class S3MPlayer {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d', { alpha: false });
+        this.ctx.imageSmoothingEnabled = false;
         this.audioCtx = null;
         this.scriptNode = null;
         this.masterGain = null;
@@ -2442,6 +2494,7 @@ class S3MMixerProcessor extends AudioWorkletProcessor {
         // Surround encoding
         this.surroundMode = 'stereo'; // 'stereo', 'prologic', 'headphone'
         this.samplePlacements = []; // [{placement, type}, ...]
+        
         this.hilbertBuffer = new Float32Array(21);
         this.hilbertIndex = 0;
         this.hilbertTaps = [0, 0.0636, 0, 0.1061, 0, 0.1592, 0, 0.2122, 0, 0.6366, 0, -0.6366, 0, -0.2122, 0, -0.1592, 0, -0.1061, 0, -0.0636, 0];
@@ -2664,7 +2717,7 @@ ${mixerFunctionsToString()}
                 const vol = ch.currentVol * (this.globalVolume / 64) * (ch.tremorOn !== false ? 1 : 0);
                 const pan = (ch.panning - 7) / 7;
                 
-                if (this.surroundMode !== 'stereo') {
+                if (this.surroundMode === 'prologic' || this.surroundMode === 'headphone') {
                     const sampleIdx = ch.sampleIndex - 1;
                     const placeInfo = this.samplePlacements[sampleIdx];
                     const placement = placeInfo?.placement ?? 0.3;
@@ -2957,7 +3010,7 @@ registerProcessor('s3m-mixer', S3MMixerProcessor);
                 const vol = ch.currentVol * (this.globalVolume / 64) * (ch.tremorOn !== false ? 1 : 0);
                 const pan = (ch.panning - 7) / 7;
                 
-                if (this.surroundMode !== 'stereo') {
+                if (this.surroundMode === 'prologic' || this.surroundMode === 'headphone') {
                     const sampleIdx = ch.sampleIndex - 1;
                     const analysis = this.sampleAnalysis[sampleIdx];
                     const placement = analysis?.placement ?? 0.3;
@@ -3107,10 +3160,11 @@ registerProcessor('s3m-mixer', S3MMixerProcessor);
     }
     
     drawChar(x, y, char, fg, bg = 0) {
-        const px = x * this.charWidth;
-        const py = y * this.charHeight;
+        const px = Math.floor(x * this.charWidth);
+        const py = Math.floor(y * this.charHeight);
         this.ctx.fillStyle = this.palette[bg];
-        this.ctx.fillRect(px, py, this.charWidth, this.charHeight);
+        // Clear slightly larger area to catch any font overflow
+        this.ctx.fillRect(px, py - 1, this.charWidth, this.charHeight + 2);
         this.ctx.fillStyle = this.palette[fg];
         this.ctx.font = '16px "DOS", "Consolas", monospace';
         this.ctx.textBaseline = 'top';
@@ -3151,11 +3205,6 @@ registerProcessor('s3m-mixer', S3MMixerProcessor);
         this.drawBox(26, 1, 15, 3, 4);
         this.drawString(27, 2, 'Order:   /   ', 7);
         this.drawBox(0, 4, 79, 18, 4);
-        // Channel numbers on right side of each column
-        for (let i = 0; i < 16; i++) {
-            this.drawString(36, 5 + i, (i + 1).toString().padStart(2), 4);
-            this.drawString(77, 5 + i, (i + 17).toString().padStart(2), 4);
-        }
     }
     
     updateDisplay() {
@@ -3236,6 +3285,7 @@ registerProcessor('s3m-mixer', S3MMixerProcessor);
     
     drawWaveforms() {
         const ctx = this.ctx;
+        ctx.imageSmoothingEnabled = false;
         
         for (let col = 0; col < 2; col++) {
             const xOffset = col * 40;
@@ -3244,13 +3294,19 @@ registerProcessor('s3m-mixer', S3MMixerProcessor);
             for (let i = 0; i < 16; i++) {
                 const chIdx = chOffset + i;
                 const ch = this.channels[chIdx];
-                if (!ch?.active) continue;
                 
                 const y = 5 + i;
-                const baseX = (13 + xOffset) * this.charWidth;
-                const baseY = y * this.charHeight + this.charHeight / 2;
-                const width = 6 * this.charWidth;
-                const height = this.charHeight * 0.45;
+                const baseX = Math.floor((13 + xOffset) * this.charWidth);
+                const cellY = Math.floor(y * this.charHeight);
+                const baseY = Math.floor(cellY + this.charHeight / 2);
+                const width = Math.floor(6 * this.charWidth);
+                const height = Math.floor(this.charHeight * 0.4);
+                
+                // Clear waveform area first
+                ctx.fillStyle = this.palette[0];
+                ctx.fillRect(baseX, cellY, width, this.charHeight);
+                
+                if (!ch?.active) continue;
                 
                 // Draw waveform oscilloscope
                 const waveform = ch.waveform;
@@ -3265,6 +3321,12 @@ registerProcessor('s3m-mixer', S3MMixerProcessor);
                     if (v > peak) peak = v;
                 }
                 
+                // Clip to cell bounds
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(baseX, cellY + 1, width, this.charHeight - 2);
+                ctx.clip();
+                
                 ctx.beginPath();
                 ctx.strokeStyle = ch.playing ? '#55FF55' : '#444444';
                 ctx.lineWidth = 1.5;
@@ -3272,13 +3334,14 @@ registerProcessor('s3m-mixer', S3MMixerProcessor);
                 for (let w = 0; w < 32; w++) {
                     const idx = (idx0 + w) & 31;
                     const val = (waveform[idx] || 0) / peak;
-                    const px = baseX + (w / 31) * width;
-                    const py = baseY - val * height;
+                    const px = Math.floor(baseX + (w / 31) * width);
+                    const py = Math.floor(baseY - val * height);
                     
-                    if (w === 0) ctx.moveTo(px, py);
-                    else ctx.lineTo(px, py);
+                    if (w === 0) ctx.moveTo(px + 0.5, py + 0.5);
+                    else ctx.lineTo(px + 0.5, py + 0.5);
                 }
                 ctx.stroke();
+                ctx.restore();
             }
         }
     }
@@ -4074,6 +4137,9 @@ document.getElementById('fileInput').onchange = async (e) => {
         document.getElementById('timeSlider').value = 0;
         document.getElementById('timePos').textContent = '0:00';
         document.getElementById('timeDur').textContent = player.formatTime(player.totalDuration);
+        // Autoplay
+        player.play();
+        document.getElementById('playPauseBtn').textContent = '⏸';
     } catch (err) { document.getElementById('info').textContent = 'Error: ' + err.message; }
 };
 
@@ -4114,6 +4180,9 @@ async function loadDemo(filename) {
         document.getElementById('timeSlider').value = 0;
         document.getElementById('timePos').textContent = '0:00';
         document.getElementById('timeDur').textContent = player.formatTime(player.totalDuration);
+        // Autoplay
+        player.play();
+        document.getElementById('playPauseBtn').textContent = '⏸';
     } catch (err) { 
         document.getElementById('info').textContent = 'Error loading: ' + err.message; 
     }
@@ -4264,13 +4333,69 @@ document.getElementById('volumeSlider').oninput = (e) => {
 document.getElementById('interpSelect').onchange = (e) => player.setInterpolation(e.target.value);
 document.getElementById('surroundMode').onchange = (e) => {
     player.setSurroundMode(e.target.value);
+    window.autoSurroundDisabled = true; // User made manual choice
     const messages = {
         'stereo': 'Standard stereo output',
         'prologic': 'Pro Logic Surround - Use receiver for 4-channel decode',
-        'headphone': 'Headphone HRTF - 3D surround simulation for headphones'
+        'headphone': 'Headphones / Laptop - HRTF spatial processing'
     };
     document.getElementById('info').textContent = messages[e.target.value] || '';
 };
+
+// Auto-detect audio output device
+window.autoSurroundDisabled = false;
+async function detectAudioDevice() {
+    if (window.autoSurroundDisabled) return;
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const outputs = devices.filter(d => d.kind === 'audiooutput');
+        
+        // Find the default/active output
+        const active = outputs.find(d => d.deviceId === 'default') || outputs[0];
+        if (!active) return;
+        
+        const label = active.label.toLowerCase();
+        let mode = null;
+        let emoji = '';
+        
+        // Detect device type from label
+        if (label.includes('headphone') || label.includes('airpod') || 
+            label.includes('buds') || label.includes('wh-1000') ||
+            label.includes('wf-1000') || label.includes('beats') ||
+            label.includes('earpod') || label.includes('in-ear')) {
+            mode = 'headphone';
+            emoji = '🎧';
+        } else if (label.includes('macbook') || label.includes('built-in') ||
+                   label.includes('laptop') || label.includes('internal')) {
+            mode = 'headphone';
+            emoji = '💻';
+        } else if (label.includes('hdmi') || label.includes('displayport') ||
+                   label.includes('soundbar') || label.includes('receiver') ||
+                   label.includes('tv') || label.includes('home theater')) {
+            mode = 'prologic';
+            emoji = '📺';
+        }
+        
+        if (mode && mode !== player.surroundMode) {
+            player.setSurroundMode(mode);
+            document.getElementById('surroundMode').value = mode;
+            const modeNames = {
+                'headphone': 'Headphones / Laptop',
+                'prologic': 'Pro Logic Surround'
+            };
+            document.getElementById('info').textContent = emoji + ' ' + modeNames[mode] + ' mode auto-selected';
+        }
+    } catch (err) {
+        // Device enumeration not supported or denied
+        console.log('Device detection not available:', err.message);
+    }
+}
+
+// Run detection on startup and device changes
+detectAudioDevice();
+if (navigator.mediaDevices?.addEventListener) {
+    navigator.mediaDevices.addEventListener('devicechange', detectAudioDevice);
+}
 
 // Timeline slider
 window.timelineDragging = false;
@@ -4306,6 +4431,9 @@ document.body.addEventListener('drop', async (e) => {
             document.getElementById('timeSlider').value = 0;
             document.getElementById('timePos').textContent = '0:00';
             document.getElementById('timeDur').textContent = player.formatTime(player.totalDuration);
+            // Autoplay
+            player.play();
+            document.getElementById('playPauseBtn').textContent = '⏸';
         } catch (err) { document.getElementById('info').textContent = 'Error: ' + err.message; }
     }
 });
