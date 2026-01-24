@@ -69,9 +69,10 @@
             cursor: pointer;
         }
         #volumeSlider { width: 80px; }
-        #interpSelect {
+        #interpSelect, #presetsSelect {
             background: #12122a; color: #55FFFF; border: 1px solid #5555FF;
             padding: 6px 10px; font-family: 'DOS', monospace; border-radius: 4px;
+            cursor: pointer;
         }
         #timeline {
             display: flex; align-items: center; gap: 10px;
@@ -385,6 +386,9 @@
         <div id="controls">
             <input type="file" id="fileInput" accept=".s3m,.S3M,.mod,.MOD">
             <button id="loadBtn">📂 LOAD</button>
+            <select id="presetsSelect">
+                <option value="">📁 Presets</option>
+            </select>
             <button id="playPauseBtn" disabled>▶</button>
             <button id="stopBtn" disabled>■</button>
             <button id="exportBtn" disabled>💾</button>
@@ -428,6 +432,10 @@
                     <div class="aboutSection">
                         <h2>🎵 S3M/MOD Player</h2>
                         <p>A modern web-based tracker module player with authentic retro modes and high-quality modern processing.</p>
+                        <p style="margin-top: 10px;">
+                            <a href="https://github.com/aghiles/fonkplay" target="_blank" style="color: #55FFFF;">📦 GitHub Repository</a> • 
+                            <a href="https://github.com/aghiles/fonkplay" target="_blank" style="color: #FFFF55;">📜 Original ASM Source</a>
+                        </p>
                     </div>
                     
                     <div class="aboutSection">
@@ -4041,6 +4049,58 @@ document.getElementById('fileInput').onchange = async (e) => {
         document.getElementById('timeDur').textContent = player.formatTime(player.totalDuration);
     } catch (err) { document.getElementById('info').textContent = 'Error: ' + err.message; }
 };
+
+// Presets loader - auto-discover from GitHub
+async function loadPresetsList() {
+    const select = document.getElementById('presetsSelect');
+    try {
+        const response = await fetch('https://api.github.com/repos/aghiles/fonkplay/contents/demos');
+        if (!response.ok) throw new Error('No demos folder');
+        const files = await response.json();
+        const modules = files.filter(f => /\.(s3m|mod)$/i.test(f.name));
+        
+        modules.forEach(file => {
+            const opt = document.createElement('option');
+            opt.value = file.name;
+            opt.textContent = file.name.replace(/\.(s3m|mod)$/i, '');
+            select.appendChild(opt);
+        });
+    } catch (err) {
+        // No demos available, keep just the placeholder
+    }
+}
+
+async function loadDemo(filename) {
+    document.getElementById('info').textContent = 'Loading: ' + filename;
+    try {
+        const response = await fetch('demos/' + filename);
+        if (!response.ok) throw new Error('File not found');
+        const buffer = await response.arrayBuffer();
+        player.initAudio();
+        await player.loadModule(buffer);
+        player.originalFilename = filename;
+        player.analyzeSamples();
+        document.getElementById('info').textContent = 'Loaded: ' + (player.module?.name || filename);
+        document.getElementById('playPauseBtn').disabled = false;
+        document.getElementById('exportBtn').disabled = false;
+        document.getElementById('timeSlider').disabled = false;
+        document.getElementById('timeSlider').value = 0;
+        document.getElementById('timePos').textContent = '0:00';
+        document.getElementById('timeDur').textContent = player.formatTime(player.totalDuration);
+    } catch (err) { 
+        document.getElementById('info').textContent = 'Error loading: ' + err.message; 
+    }
+}
+
+document.getElementById('presetsSelect').onchange = (e) => {
+    if (e.target.value) {
+        loadDemo(e.target.value);
+        e.target.value = ''; // Reset to placeholder
+    }
+};
+
+// Load presets list on startup
+loadPresetsList();
 document.getElementById('playPauseBtn').onclick = async () => {
     const btn = document.getElementById('playPauseBtn');
     if (!player.playing) {
