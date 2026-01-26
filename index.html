@@ -1027,7 +1027,10 @@ const MixerFunctions = {
                 }
                 if (param) ch.portaSpeed = param * 4;
                 break;
-            case 8: if (param) { ch.oldVibrato = param; if (param >> 4) ch.vibratoSpeed = param >> 4; if (param & 0x0F) ch.vibratoDepth = param & 0x0F; } break;
+            case 8: 
+                if (!param) param = ch.oldVibrato;
+                else { if (!(param >> 4)) param = (ch.oldVibrato & 0xF0) | (param & 0x0F); if (!(param & 0x0F)) param = (param & 0xF0) | (ch.oldVibrato & 0x0F); ch.oldVibrato = param; }
+                ch.vibratoSpeed = param >> 4; ch.vibratoDepth = param & 0x0F; break;
             case 9: if (param) ch.oldTremor = param; ch.tremorPos = 0; break;
             case 10: if (param) ch.oldArpeggio = param; ch.arpeggio[0] = ch.period;
                 ch.arpeggio[1] = this.calcPeriod(ch.note + ((ch.oldArpeggio >> 4) << 4) + (ch.note & 0x0F), ch.basePeriod);
@@ -1056,11 +1059,9 @@ const MixerFunctions = {
                     else if ((param & 0x0F) && !(param & 0xF0)) ch.volume = this.clipVolume(ch.volume - (param & 0x0F));
                     this.updateChannelVolume(ch); break;
                 case 5: if ((param & 0xF0) !== 0xF0 && (param & 0xF0) !== 0xE0) {
-                    if (param & 0xF0) ch.period = this.clipPeriod(ch.period - ((param >> 4) * 4));
-                    else ch.period = this.clipPeriod(ch.period + ((param & 0x0F) * 4)); this.updateChannelPitch(ch); } break;
+                    ch.period = this.clipPeriod(ch.period + (param * 4)); this.updateChannelPitch(ch); } break;
                 case 6: if ((param & 0xF0) !== 0xF0 && (param & 0xF0) !== 0xE0) {
-                    if (param & 0xF0) ch.period = this.clipPeriod(ch.period + ((param >> 4) * 4));
-                    else ch.period = this.clipPeriod(ch.period - ((param & 0x0F) * 4)); this.updateChannelPitch(ch); } break;
+                    ch.period = this.clipPeriod(ch.period - (param * 4)); this.updateChannelPitch(ch); } break;
                 case 7: if (ch.period < ch.portaTarget) ch.period = Math.min(ch.period + ch.portaSpeed, ch.portaTarget);
                     else if (ch.period > ch.portaTarget) ch.period = Math.max(ch.period - ch.portaSpeed, ch.portaTarget);
                     this.updateChannelPitch(ch); break;
