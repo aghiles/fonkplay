@@ -985,7 +985,10 @@ const MixerFunctions = {
                     if (sample) { ch.sample = sample; ch.basePeriod = sample.c2spd || 8363; }
                     ch.note = cell.note;
                     ch.period = (this.module?.isMOD && cell.modPeriod > 0) ? cell.modPeriod * 4 : this.calcPeriod(cell.note, ch.basePeriod);
-                    ch.vibratoPos = 0; ch.arpIndex = 0; ch.volumeKick = true; this.triggerNote(ch);
+                    ch.vibratoPos = 0; ch.arpIndex = 0; ch.volumeKick = true;
+                    // Apply sample offset (effect O) before trigger so it takes effect
+                    if (cell.effect === 15) { const p = cell.effectParam || ch.sampleOffsetMem; if (p) ch.sampleOffsetMem = p; ch.sampleOffset = (ch.sampleOffsetMem || p) * 256; }
+                    this.triggerNote(ch);
                 } else {
                     // Portamento to note - set target using MOD period directly if available
                     ch.portaTarget = (this.module?.isMOD && cell.modPeriod > 0) ? cell.modPeriod * 4 : this.calcPeriod(cell.note, ch.basePeriod);
@@ -2013,6 +2016,8 @@ class S3MPlayer {
                     ch.vibratoPos = 0;
                     ch.arpIndex = 0;
                     ch.volumeKick = true;
+                    // Apply sample offset (effect O) before trigger so it takes effect
+                    if (cell.effect === 15) { const p = cell.effectParam || ch.sampleOffsetMem; if (p) ch.sampleOffsetMem = p; ch.sampleOffset = (ch.sampleOffsetMem || p) * 256; }
                     this.triggerNote(ch);
                 }
             } else if (cell.note === 254) {
